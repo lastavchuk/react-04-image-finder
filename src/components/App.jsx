@@ -3,10 +3,11 @@ import { requestGetImages } from 'services/api';
 import { Section } from './Section/Section';
 import { ImageGallery } from './ImageGallerys/ImageGallery';
 import { Searchbar } from './Searchbar/Searchbar';
-import { Button } from './Button/Button';
+// import { Button } from './Button/Button';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { Loader } from './Loader/Loader';
 import { Modal } from './Modal/Modal';
+import { useInView } from 'react-intersection-observer';
 
 export function App() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +16,10 @@ export function App() {
     const [totalPages, setTotalPages] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [modal, setModal] = useState({ isOpen: false, modalData: null });
+
+    const { ref, inView } = useInView({
+        rootMargin: '200px',
+    });
 
     useEffect(() => {
         async function getImages() {
@@ -29,8 +34,10 @@ export function App() {
                 if (currentPage === 1) {
                     setImages(resp.hits);
                     setTotalPages(Math.ceil(resp.totalHits / 12));
+                    window.scrollTo(0, 0);
                 } else {
                     setImages(prevState => [...prevState, ...resp.hits]);
+                    scroll();
                 }
             } catch (error) {
                 Notify.failure(`Someting wrong!</br><b>${error.message}</b>`, {
@@ -41,8 +48,21 @@ export function App() {
             }
         }
 
+        function scroll() {
+            setTimeout(() => {
+                window.scrollBy({
+                    top: window.innerHeight / 1.5,
+                    behavior: 'smooth',
+                });
+            }, 0);
+        }
+
         if (!!searchTerm) getImages();
     }, [currentPage, searchTerm]);
+
+    useEffect(() => {
+        inView && loadMore();
+    }, [inView]);
 
     const onGetNewImages = async e => {
         e.preventDefault();
@@ -76,8 +96,11 @@ export function App() {
                             onClose={closeModal}
                         />
                     )}
-                    {totalPages > 1 && currentPage < totalPages && (
+                    {/* {totalPages > 1 && currentPage < totalPages && (
                         <Button onClick={loadMore}>Load more</Button>
+                    )} */}
+                    {totalPages > 1 && currentPage < totalPages && (
+                        <div ref={ref}></div>
                     )}
                 </Section>
             )}
